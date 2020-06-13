@@ -1,0 +1,70 @@
+valuesalues = [4, 5, 3, 7]
+weight = [13, 5, 4, 7]
+sack = 13
+status = [0, 0, 0, 0]
+
+function arr_sum(arr)
+    sum = 0
+
+    for i in 1: size(arr, 1)
+        sum = sum + arr[i]
+    end
+    return sum
+end
+
+function heuristic(values, weight, a, sackMax)
+    if arr_sum(weight .* a) > sackMax
+        return -1
+    else
+        return arr_sum(values.*a)
+    end
+end
+
+function neighbours(currentNode)
+    neighbours = [[], [], [], []]
+
+    for j in 1: 4
+        tempNode = currentNode
+        for i in 1:size(currentNode, 1)
+            if(tempNode[i] == 1)
+                tempNode[i] = 0
+            else
+                tempNode[i] = rand((0,1))
+            end
+        end
+     
+        neighbours[j] = tempNode
+    end
+    return neighbours
+end
+
+function evaluate(i)
+    return heuristic(valuesalues, weight, i, 10)
+end
+
+function hillClimbing(startNode)
+    currentNode = startNode
+    while true
+        X = neighbours(currentNode)
+        nextEval = -10000
+        nextNode = nothing
+        for i in 1: size(X, 1)
+            if (evaluate(X[i]) > nextEval)
+                nextNode = X[i]
+                nextEval = evaluate(X[i])
+            end
+        end
+
+        if nextEval <= evaluate(currentNode)
+            return currentNode
+        end
+
+        if(nextEval > -1 )
+            currentNode = nextNode
+        end
+    end
+
+end
+
+
+println(hillClimbing([0, 1, 0, 0]))
