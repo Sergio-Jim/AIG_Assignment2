@@ -1,4 +1,4 @@
-valuesalues = [4, 5, 3, 7]
+valuestatus = [4, 5, 3, 7]
 weight = [13, 5, 4, 7]
 sack = 13
 status = [0, 0, 0, 0]
@@ -39,7 +39,7 @@ function neighbours(currentNode)
 end
 
 function evaluate(i)
-    return heuristic(valuesalues, weight, i, 10)
+    return heuristic(valuestatus, weight, i, 10)
 end
 
 function hillClimbing(startNode)
