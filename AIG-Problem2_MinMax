@@ -1,0 +1,75 @@
+import Base.display;
+
+export AbstractGame, Figure5_2, descision, alphabeta_full_search, alphabeta_search, display, albePlayer, startGame;
+
+#Description of the game begins
+function argmax(seq::T, fn::Function) where {T <: Vector}
+
+    local bElement = seq[1];
+    local bScrore = fn(bElement);
+
+    for element in seq
+        elementScore = fn(element);
+
+        if (elementScore > bScrore)
+            bElement = element;
+            bScrore = elementScore;
+        end
+    end
+    return bElement;
+end
+
+function if_(boolExpression::Bool, answer1::Any, answer2::Any)
+    if (boolExpression)
+        return answer1;
+    else
+        return answer2;
+    end
+end
+
+abstract type AbstractGame end;
+
+#Struct can be considered as a class
+struct Game <: AbstractGame
+    initial::String
+
+    function Game(initial_state::String)
+        return new(initial_state);
+    end
+end
+
+#Defining the action function without any implementation
+function actions(game::T, state::String) where {T <: AbstractGame}
+    println("no implementation", typeof(game), "!");
+    nothing;
+end
+
+#Defining the result function without implementation
+function result(game::T, state::String, move::String) where {T <: AbstractGame}
+    println("no implementation", typeof(game), "!");
+    nothing;
+end
+
+#Defining the utility function without implementation
+function utility(game::T, state::String, player::String) where {T <: AbstractGame}
+    println("no implementation", typeof(game), "!");
+    nothing;
+end
+
+function termTest(game::T, state::String) where {T <: AbstractGame}
+    if (length(actions(game, state)) == 0)
+        return true;
+    else
+        return false;
+    end
+end
+
+#Defining the move function without implementation
+function makeMove(game::T, state::String) where {T <: AbstractGame}
+    println("no implementation", typeof(game), "!");
+    nothing;
+end
+
+function display(game::T, state::String) where {T <: AbstractGame}
+    println(state);
+end
