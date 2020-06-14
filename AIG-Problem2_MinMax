@@ -73,3 +73,200 @@ end
 function display(game::T, state::String) where {T <: AbstractGame}
     println(state);
 end
+
+#Class for figure 5.2 Game
+struct Figure_52 <: AbstractGame
+    initial::String
+    nodes::Dict
+    utilities::Dict
+
+#Refer to "A" as node and "A1" as edge and continueing letters as Child Nodes and there edges
+    function Figure_52()
+        return new("A", Dict([
+                            Pair("A", Dict("A1"=>"B",  "A2"=>"C",  "A3"=>"D")),
+                            Pair("B", Dict("B1"=>"B1", "B2"=>"B2", "B3"=>"B3")),
+                            Pair("C", Dict("C1"=>"C1", "C2"=>"C2", "C3"=>"C3")),
+                            Pair("D", Dict("D1"=>"D1", "D2"=>"D2", "D3"=>"D3")),
+                            ]),
+                        Dict([
+                            Pair("B1", 1), Pair("B2", 8), Pair("B3", 12),
+                            Pair("C1", 6), Pair("C2", 7), Pair("C3", 10),
+                            Pair("D1", 18), Pair("D2", 9), Pair("D3", 5),
+                            ]));
+    end
+end
+
+function actions(game::Figure_52, state::String)
+    return collect(keys(get(game.nodes, state, Dict())));
+end
+
+function result(game::Figure_52, state::String, move::String)
+    return game.nodes[state][move];
+end
+
+function utility(game::Figure_52, state::String, player::String)
+    if (player == "max")
+        return game.utilities[state];
+    else
+        return -game.utilities[state];
+    end
+end
+
+function termTest(game::Figure_52, state::String)
+    return !(state in ["A", "B", "C", "D"]);
+end
+
+function makeMove(game::Figure_52, state::String)
+    return if_((state in ["B", "C", "D"]), "min", "max");
+end
+
+function minmaxMaxValue(game::T, player::String, state::String) where {T <: AbstractGame}
+    if (termTest(game, state))
+        return utility(game, state, player)
+    end
+
+    local value::Float64 = -Inf64;
+
+    value = reduce(max, vcat(value, collect(minmaxMinValue(game, player, result(game, state, action))
+                                    for action in actions(game, state))));
+    return value;
+end
+
+function minmaxMinValue(game::T, player::String, state::String) where {T <: AbstractGame}
+    if (termTest(game, state))
+        return utility(game, state, player);
+    end
+
+    local value::Float64 = Inf64;
+
+    value = reduce(min, vcat(value, collect(minmaxMaxValue(game, player, result(game, state, action))
+                                    for action in actions(game, state))));
+    return value;
+end
+
+#Scroll down to the leaf node
+function descision(state::String, game::T) where {T <: AbstractGame}
+    local player = makeMove(game, state);
+
+    return argmax(actions(game, state),
+                    (function(action::String,; relevantGame::AbstractGame=game, relevantPlayer::String=player, relevantState::String=state)
+                        return minmaxMinValue(relevantGame, relevantPlayer, result(relevantGame, relevantState, action));
+                    end));
+end
+
+
+function albeFullSearch_maxValue(game::T, player::String, state::String, alpha::Number, beta::Number) where {T <: AbstractGame}
+    if (termTest(game, state))
+        return utility(game, state, player)
+    end
+    
+    local value::Float64 = -Inf64;
+    
+    for action in actions(game, state)
+        value = max(value, albeFullSearch_minValue(game, player, result(game, state, action), alpha, beta));
+        if (value >= beta)
+            return value;
+        end
+        alpha = max(alpha, value);
+    end
+    return value;
+end
+
+function albeFullSearch_minValue(game::T, player::String, state::String, alpha::Number, beta::Number) where {T <: AbstractGame}
+    if (termTest(game, state))
+        return utility(game, state, player);
+    end
+
+    local value::Float64 = Inf64;
+    
+    for action in actions(game, state)
+        value = min(value, albeFullSearch_maxValue(game, player, result(game, state, action), alpha, beta));
+        
+        if (value <= alpha)
+            return value;
+        end
+        beta = min(beta, value);
+    end
+    return value;
+end
+
+function albeSearch_maxValue(game::T, player::String, cutoff::Function, evaluFunction::Function, state::String, alpha::Number, beta::Number, depth::Int64) where {T <: AbstractGame}
+    if (cutoff(state, depth))
+        return evaluFunction(state);
+    end
+
+    local value::Float64 = -Inf64;
+    
+    for action in actions(game, state)
+        value = max(value, albeSearch_minValue(game, player, cutoff, evaluFunction, result(game, state, action), alpha, beta, depth + 1));
+    
+        if (value >= beta)
+            return value;
+        end
+    
+        alpha = max(alpha, value);
+    
+    end
+    return value;
+end
+
+function albeSearch_minValue(game::T, player::String, cutoff::Function, evaluFunction::Function, state::String, alpha::Number, beta::Number, depth::Int64) where {T <: AbstractGame}
+    if (cutoff(state, depth))
+        return evaluFunction(state);
+    end
+
+    local value::Float64 = Inf64;
+
+    for action in actions(game, state)
+        value = min(value, albeSearch_maxValue(game, player, cutoff, evaluFunction, result(game, state, action), alpha, beta, depth + 1));
+        
+        if (value >= alpha)
+            return value;
+        end
+        beta = min(alpha, value);
+    end
+    return value;
+end
+
+#Alphabeta search begins with pruning by cutting off edges
+function alphabeta_search(state::String, game::T; d::Int64=4, cutoff::Union{Nothing, Function}=nothing, evaluFunction::Union{Nothing, Function}=nothing) where {T <: AbstractGame}
+    
+    local player::String = makeMove(game, state);
+    
+    if (typeof(cutoff) <: Nothing)
+        cutoff = (function(state::String, depth::Int64; dvar::Int64=d, relevantGame::AbstractGame=game)
+                            return ((depth > dvar) || termTest(relevantGame, state));
+                        end);
+    end
+
+    if (typeof(evaluFunction) <: Nothing)
+        evaluFunction = (function(state::String, ; relevantGame::AbstractGame=game, relevantPlayer::String=player)
+                            return utility(relevantGame, state, relevantPlayer);
+                        end);
+    end
+    return argmax(actions(game, state),
+                    (function(action::String,; relevantGame::AbstractGame=game, relevantState::String=state, relevantPlayer::String=player, cutoff_test::Function=cutoff, eval_fn::Function=evaluFunction)
+                        return albeSearch_minValue(relevantGame, relevantPlayer, cutoff_test, eval_fn, result(relevantGame, relevantState, action), -Inf64, Inf64, 0);
+                    end));
+end
+
+function albePlayer(game::T, state::String) where {T <: AbstractGame}
+    return alphabeta_search(state, game);
+end
+
+function startGame(game::T, players::Vararg{Function}) where {T <: AbstractGame}
+    state = game.initial;
+    while (true)
+        for player in players
+            move = player(game, state);
+            state = result(game, state, move);
+
+            if (termTest(game, state))
+                return utility(game, state, makeMove(game, game.initial));
+            end
+        end
+    end
+end
+
+game = Figure_52()
+println(startGame(game, albePlayer, albePlayer))
