@@ -1,2 +1,2 @@
-# AIG_Assignment2
-AI assignment 2
+# Artificial Intelligence
+Algorithms for Hill Climbing game models and Minimax
